@@ -4,18 +4,29 @@
 #include <Ticker.h>
 #include <Time.h>
 
-#define TdsSensorPin A0
+#define SensorPin A0
 #define VREF 3.3  // analog reference voltage(Volt) of the ADC
 #define SCOUNT 30 // sum of sample point
 
+const int TdsPowerPin = 4;
+const int PhPowerPin = 5;
+
+float calibration_value = 22.84 - 0.7;
+int phval = 0;
+unsigned long int avgval;
+int buffer_arr[10], temp;
+
+float ph_act;
 // wifi configuration
-#define WIFI_SSID "Ayasofer"
-#define WIFI_PASSWORD "02742151"
+// #define WIFI_SSID "Lonsher-Office"
+// #define WIFI_PASSWORD "62306230"
+#define WIFI_SSID "Lonsher-Office"
+#define WIFI_PASSWORD "62306230"
 
 // mqtt server configuration10.100.102.21
-#define MQTT_HOST IPAddress(10, 100, 102, 21)
+#define MQTT_HOST IPAddress(192, 168, 1, 200)
 #define MQTT_PORT 1883
-#define MQTT_PUB_TDS "Hydro/tds"
+#define MQTT_PUB_TDS "Hydro/esp"
 
 AsyncMqttClient mqttClient;
 Ticker mqttReconnectTimer;
@@ -24,7 +35,40 @@ WiFiEventHandler wifiConnectHandler;
 WiFiEventHandler wifiDisconnectHandler;
 Ticker wifiReconnectTimer;
 
-float temperature = 23; // current temperature for compensation
+int copyIndex = 0;
+
+float averageVoltage = 0;
+float tdsValue = 0;
+float temperature = 25;
+
+int getMedianNum(int bArray[], int iFilterLen)
+{
+  int bTab[iFilterLen];
+  for (byte i = 0; i < iFilterLen; i++)
+    bTab[i] = bArray[i];
+  int i, j, bTemp;
+  for (j = 0; j < iFilterLen - 1; j++)
+  {
+    for (i = 0; i < iFilterLen - j - 1; i++)
+    {
+      if (bTab[i] > bTab[i + 1])
+      {
+        bTemp = bTab[i];
+        bTab[i] = bTab[i + 1];
+        bTab[i + 1] = bTemp;
+      }
+    }
+  }
+  if ((iFilterLen & 1) > 0)
+  {
+    bTemp = bTab[(iFilterLen - 1) / 2];
+  }
+  else
+  {
+    bTemp = (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
+  }
+  return bTemp;
+}
 
 void connectToWifi()
 {
@@ -117,29 +161,70 @@ int readAnalogAvarage(int readNum = 10)
   for (int analogBufferIndex = 0; analogBufferIndex < readNum; analogBufferIndex++)
   {
     analogSum = analogSum + analogRead(A0); // read the analog value and store into the buffer
-    delay(1);
+    delay(10);
   }
   return (analogSum / readNum);
 }
 
 int readTds()
 {
-  int avrageAnalog = readAnalogAvarage();
-  // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-  float averageVoltage = avrageAnalog * (float)VREF / 1024.0;
-  // temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
+  int analogBufferIndex = 0;
+  int analogBuffer[SCOUNT];
+  static unsigned long analogSampleTimepoint = millis();
+  while (analogBufferIndex != SCOUNT)
+  {
+    if (millis() - analogSampleTimepoint > 40U)
+    { // every 40 milliseconds,read the analog value from the ADC
+      analogSampleTimepoint = millis();
+      analogBuffer[analogBufferIndex] = analogRead(SensorPin); // read the analog value and store into the buffer
+      analogBufferIndex++;
+    }
+  }
+
+  averageVoltage = getMedianNum(analogBuffer, SCOUNT) * (float)VREF / 1024.0;
+
   float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);
-  // temperature compensation
+
   float compensationVoltage = averageVoltage / compensationCoefficient;
-  // convert voltage value to tds value
-  float tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
+
+  tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
+
   return tdsValue;
+}
+
+float readPh()
+{
+  for (int i = 0; i < 10; i++)
+  {
+    buffer_arr[i] = analogRead(A0);
+    delay(30);
+  }
+  for (int i = 0; i < 9; i++)
+  {
+    for (int j = i + 1; j < 10; j++)
+    {
+      if (buffer_arr[i] > buffer_arr[j])
+      {
+        temp = buffer_arr[i];
+        buffer_arr[i] = buffer_arr[j];
+        buffer_arr[j] = temp;
+      }
+    }
+  }
+  avgval = 0;
+  for (int i = 2; i < 8; i++)
+    avgval += buffer_arr[i];
+  float volt = (float)avgval * 3.3 / 1024 / 6;
+  ph_act = -5.70 * volt + calibration_value;
+  return ph_act;
 }
 
 void setup()
 {
   Serial.begin(9600);
-  pinMode(TdsSensorPin, INPUT);
+  pinMode(TdsPowerPin, OUTPUT);
+  pinMode(PhPowerPin, OUTPUT);
+  pinMode(SensorPin, INPUT);
   WiFi.mode(WIFI_STA);
   wifiConnectHandler = WiFi.onStationModeGotIP(onWifiConnect);
   wifiDisconnectHandler = WiFi.onStationModeDisconnected(onWifiDisconnect);
@@ -157,12 +242,18 @@ void setup()
 
 void loop()
 {
+  digitalWrite(TdsPowerPin, HIGH);
+  delay(10);
   int tmp_tds = readTds();
-  Serial.println(tmp_tds);
-  Serial.println(analogRead(A0));
+  digitalWrite(TdsPowerPin, LOW);
+  digitalWrite(PhPowerPin, HIGH);
+  delay(10);
+  float tmp_ph = readPh();
+  digitalWrite(PhPowerPin, LOW);
   char influxDBLineProtocol[128]; // Adjust buffer size as per your requirements
-  sprintf(influxDBLineProtocol, "tds,tds_sensor=sensor_1 tds_value=%d", tmp_tds);
+  sprintf(influxDBLineProtocol, "esp0,hydro_number=0 tds_value=%d,ph_value=%f", tmp_tds, tmp_ph);
   uint16_t packetIdPub1 = mqttClient.publish(MQTT_PUB_TDS, 2, true, influxDBLineProtocol);
+  Serial.println(influxDBLineProtocol);
   Serial.print("Publishing at QoS 2, packetId: ");
   Serial.println(packetIdPub1);
   delay(1000);
