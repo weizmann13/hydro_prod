@@ -3,11 +3,14 @@
 #include <AsyncMqttClient.h>
 #include <Ticker.h>
 #include <Time.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 #define SensorPin A0
 #define VREF 3.3  // analog reference voltage(Volt) of the ADC
 #define SCOUNT 30 // sum of sample point
 
+const int oneWireBus = 0;
 const int TdsPowerPin = 4;
 const int PhPowerPin = 5;
 
@@ -40,6 +43,9 @@ int copyIndex = 0;
 float averageVoltage = 0;
 float tdsValue = 0;
 float temperature = 25;
+
+OneWire oneWire(oneWireBus);
+DallasTemperature sensors(&oneWire);
 
 int getMedianNum(int bArray[], int iFilterLen)
 {
@@ -182,8 +188,9 @@ int readTds()
   }
 
   averageVoltage = getMedianNum(analogBuffer, SCOUNT) * (float)VREF / 1024.0;
-
-  float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);
+  sensors.requestTemperatures();
+  float temperatureC = sensors.getTempCByIndex(0);
+  float compensationCoefficient = 1.0 + 0.02 * (temperatureC - 25.0);
 
   float compensationVoltage = averageVoltage / compensationCoefficient;
 
@@ -238,6 +245,7 @@ void setup()
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
 
   connectToWifi();
+  sensors.begin();
 }
 
 void loop()
@@ -250,8 +258,10 @@ void loop()
   delay(10);
   float tmp_ph = readPh();
   digitalWrite(PhPowerPin, LOW);
+  sensors.requestTemperatures();
+  float temperatureC = sensors.getTempCByIndex(0);
   char influxDBLineProtocol[128]; // Adjust buffer size as per your requirements
-  sprintf(influxDBLineProtocol, "esp0,hydro_number=0 tds_value=%d,ph_value=%f", tmp_tds, tmp_ph);
+  sprintf(influxDBLineProtocol, "esp0,hydro_number=0 tds_value=%d,ph_value=%f,temp_value=%f", tmp_tds, tmp_ph, temperatureC);
   uint16_t packetIdPub1 = mqttClient.publish(MQTT_PUB_TDS, 2, true, influxDBLineProtocol);
   Serial.println(influxDBLineProtocol);
   Serial.print("Publishing at QoS 2, packetId: ");
