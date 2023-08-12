@@ -11,11 +11,6 @@ PhModule::PhModule(int pin, int powerPin, float calibration_value)
 {
 }
 
-PhModule::PhModule(int pin, int powerPin, float VREF)
-    : _pin(pin), _value(0.0), _powerPin(powerPin), _VREF(VREF)
-{
-}
-
 PhModule::PhModule(int pin, int powerPin, float calibration_value, float VREF)
     : _pin(pin), _value(0.0), _powerPin(powerPin), _calibration_value(calibration_value), _VREF(VREF)
 {
@@ -29,7 +24,7 @@ float PhModule::readPh()
     for (int i = 0; i < 10; i++)
     {
         buffer_arr[i] = analogRead(_pin);
-        delay(30);
+        delay(40);
     }
     for (int i = 0; i < 9; i++)
     {
@@ -53,13 +48,18 @@ float PhModule::readPh()
 
 void PhModule::begin()
 {
+    pinMode(_powerPin, OUTPUT);
+    digitalWrite(_powerPin, LOW);
 }
 
 float PhModule::readSensor()
 {
     // Read analog value from _pin and perform sensor-specific calculations
     // to obtain TDS value
+    digitalWrite(_powerPin, HIGH);
+    delay(10);
     _value = readPh();
+    digitalWrite(_powerPin, LOW);
     return _value;
 }
 

@@ -6,7 +6,6 @@ class PhModule
 public:
     PhModule(int pin, int powerPin);
     PhModule(int pin, int powerPin, float calibration_value);
-    PhModule(int pin, int powerPin, float VREF);
     PhModule(int pin, int powerPin, float calibration_value, float VREF);
 
     void begin();
