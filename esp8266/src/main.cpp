@@ -1,8 +1,8 @@
 #include <Arduino.h>
-#include "TDSModule.h"  // Class for TDS sensor
-#include "PhModule.h"   // Class for pH sensor
-#include "TempModule.h" // Class for temperature sensor
-#include "MQTTModule.h" // Class for MQTT communication
+#include "TDSModule/TDSModule.h"   // Class for TDS sensor
+#include "PhModule/PhModule.h"     // Class for pH sensor
+#include "TempModule/TempModule.h" // Class for temperature sensor
+#include "MQTTModule/MQTTModule.h" // Class for MQTT communication
 
 #define WIFI_SSID "Lonsher-Office"
 #define WIFI_PASSWORD "62306230"
@@ -21,7 +21,7 @@ void setup()
   tdsModule.begin();
   phModule.begin();
   tempModule.begin();
-  mqttModule.begin()
+  mqttModule.begin();
 }
 
 void loop()
@@ -29,8 +29,6 @@ void loop()
   tdsModule.readSensor();
   phModule.readSensor();
   tempModule.readSensor();
-
   mqttModule.publishData(MQTT_TOPIC, tdsModule.getValue(), phModule.getValue(), tempModule.getValue());
-
   delay(1000);
 }
