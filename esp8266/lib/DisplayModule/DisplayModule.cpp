@@ -35,12 +35,35 @@ void DisplayModule::displayTemperature()
     _lcd.print("Temp: ");
     _lcd.print(_tempModule.getValue());
     _lcd.print(" C");
-    delay(2000);   // Display the readings for 2 seconds
-    displayMenu(); // Return to the menu
+}
+
+void DisplayModule::displayTds()
+{
+    _lcd.clear();
+    _lcd.print("Tds: ");
+    _lcd.print(_tdsModule.getValue());
+    _lcd.print(" ppm");
+}
+
+void DisplayModule::displayPh()
+{
+    _lcd.clear();
+    _lcd.print("Ph: ");
+    _lcd.print(_phModule.getValue());
+    _lcd.print(" somthing");
 }
 
 void DisplayModule::loop()
 {
+    if (_inDisplay && millis() - _displayStartTime > 3000)
+    {
+        _inDisplay = false;
+        displayMenu();
+    }
+    else if (_inDisplay)
+    {
+        return;
+    }
     _encoder.tick();
     // Update the menu position
     _menuPosition = _encoder.getPosition() % 3;
@@ -58,11 +81,13 @@ void DisplayModule::loop()
     // Check if the rotary encoder button is pressed
     if (digitalRead(D7) == LOW)
     {
+        _inDisplay = true;
+        _displayStartTime = millis();
         // Perform an action based on the selected menu item
         switch (_menuPosition)
         {
         case 0:
-            // Action for Option 1
+            displayTds();
             break;
         case 1:
             // Action for Option 2
@@ -70,6 +95,7 @@ void DisplayModule::loop()
             break;
         case 2:
             // Action for Option 3
+            displayPh();
             break;
         }
     }

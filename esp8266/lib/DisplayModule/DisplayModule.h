@@ -19,14 +19,19 @@ public:
 private:
     void displayMenu();
     void displayTemperature();
+    void displayTds();
+    void displayPh();
+
+    unsigned long _displayStartTime = 0;
+    bool _inDisplay = false;
     LiquidCrystal_I2C _lcd;
     RotaryEncoder _encoder;
     const char *_menuItems[3] = {"tds value", "temp value", "ph value"};
     int _menuPosition = 0;
     int _prevMenuPosition = 0;
-    TDSModule _tdsModule;
-    PhModule _phModule;
-    TempModule _tempModule;
+    TDSModule &_tdsModule;
+    PhModule &_phModule;
+    TempModule &_tempModule;
 };
 
 #endif

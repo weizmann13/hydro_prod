@@ -14,7 +14,7 @@ public:
 
     void begin();
     bool readSensor();
-    int getValue();
+    float getValue();
 
 private:
     float getAverageNum(int bArray[], int iFilterLen);

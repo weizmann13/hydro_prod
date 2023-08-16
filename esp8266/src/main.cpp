@@ -19,6 +19,7 @@ bool tdsReady = false;
 bool phReady = false;
 unsigned long tdsPreviousMillis = 0;
 unsigned long phPreviousMillis = 0;
+unsigned long mqttPreviousMillis = 0;
 
 TDSModule tdsModule(TdsPhPin, TdsPowerPin, tempPin);
 PhModule phModule(TdsPhPin, PhPowerPin);
@@ -38,20 +39,23 @@ void setup()
 
 void loop()
 {
-
   if (tdsModule.readSensor())
   {
-    Serial.printf("tds value%f, time %lu\n", tdsModule.getValue(), millis() - tdsPreviousMillis);
+    Serial.printf("tds value %f, time %lu\n", tdsModule.getValue(), millis() - tdsPreviousMillis);
     tdsPreviousMillis = millis();
   }
   if (phModule.readSensor())
   {
-    Serial.printf("ph value%f, time %lu\n", phModule.getValue(), millis() - phPreviousMillis);
+    Serial.printf("ph value %f, time %lu\n", phModule.getValue(), millis() - phPreviousMillis);
     phPreviousMillis = millis();
   }
+  // tdsModule.readSensor();
+  // phModule.readSensor();
   tempModule.readSensor();
-
-  // mqttModule.publishData(MQTT_TOPIC, tdsModule.getValue(), phModule.getValue(), tempModule.getValue());
+  if (millis() - mqttPreviousMillis > 5000)
+  {
+    mqttPreviousMillis = millis();
+    // mqttModule.publishData(MQTT_TOPIC, tdsModule.getValue(), phModule.getValue(), tempModule.getValue());
+  }
   displayModule.loop();
-  // delay(1000);
 }

@@ -78,7 +78,7 @@ bool TDSModule::readSensor()
     return false;
 }
 
-int TDSModule::getValue()
+float TDSModule::getValue()
 {
     return _tdsValue;
 }
