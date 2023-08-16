@@ -16,51 +16,59 @@ PhModule::PhModule(int pin, int powerPin, float calibration_value, float VREF)
 {
 }
 
+PhModule::PhModule(int pin, int powerPin, float calibration_value, float VREF, int SCOUNT)
+    : _pin(pin), _value(0.0), _powerPin(powerPin), _calibration_value(calibration_value), _VREF(VREF), _SCOUNT(SCOUNT)
+{
+}
+
+float PhModule::getAverageNum(int bArray[], int iFilterLen)
+{
+    float sum = 0;
+    for (int i = 0; i < iFilterLen; i++)
+    {
+        sum += bArray[i];
+    }
+    return sum / iFilterLen;
+}
+
 float PhModule::readPh()
 {
-    int buffer_arr[10], temp;
-    float ph_act;
-    unsigned long int avgval;
-    for (int i = 0; i < 10; i++)
+    if (millis() - _previousMillis > 40U)
     {
-        buffer_arr[i] = analogRead(_pin);
-        delay(40);
-    }
-    for (int i = 0; i < 9; i++)
-    {
-        for (int j = i + 1; j < 10; j++)
+        _previousMillis = millis();
+        _analogBuffer[_bufferCounter] = analogRead(_pin);
+        if (_bufferCounter == _SCOUNT)
         {
-            if (buffer_arr[i] > buffer_arr[j])
-            {
-                temp = buffer_arr[i];
-                buffer_arr[i] = buffer_arr[j];
-                buffer_arr[j] = temp;
-            }
+            float avgval = getAverageNum(_analogBuffer, _SCOUNT);
+            float volt = (float)avgval * _VREF / 1024 / 6;
+            float ph_act = -5.70 * volt + _calibration_value;
+            _bufferCounter = 0;
+            return ph_act;
         }
+        _bufferCounter += 1;
     }
-    avgval = 0;
-    for (int i = 2; i < 8; i++)
-        avgval += buffer_arr[i];
-    float volt = (float)avgval * _VREF / 1024 / 6;
-    ph_act = -5.70 * volt + _calibration_value;
-    return ph_act;
+    return 0;
 }
 
 void PhModule::begin()
 {
     pinMode(_powerPin, OUTPUT);
     digitalWrite(_powerPin, LOW);
+    _analogBuffer = new int[_SCOUNT];
 }
 
-float PhModule::readSensor()
+bool PhModule::readSensor()
 {
-    // Read analog value from _pin and perform sensor-specific calculations
-    // to obtain TDS value
     digitalWrite(_powerPin, HIGH);
-    delay(10);
-    _value = readPh();
+    // delay(3);
+    int tmp_value = readPh();
     digitalWrite(_powerPin, LOW);
-    return _value;
+    if (tmp_value)
+    {
+        _value = tmp_value;
+        return true;
+    }
+    return false;
 }
 
 float PhModule::getValue()

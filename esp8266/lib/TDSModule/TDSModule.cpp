@@ -26,33 +26,14 @@ TDSModule::TDSModule(int tdsPin, int tdsPowerPin, int tempPin, float VREF, int S
 {
 }
 
-int TDSModule::getMedianNum(int bArray[], int iFilterLen)
+float TDSModule::getAverageNum(int bArray[], int iFilterLen)
 {
-    int bTab[iFilterLen];
-    for (byte i = 0; i < iFilterLen; i++)
-        bTab[i] = bArray[i];
-    int i, j, bTemp;
-    for (j = 0; j < iFilterLen - 1; j++)
+    float sum = 0;
+    for (int i = 0; i < iFilterLen; i++)
     {
-        for (i = 0; i < iFilterLen - j - 1; i++)
-        {
-            if (bTab[i] > bTab[i + 1])
-            {
-                bTemp = bTab[i];
-                bTab[i] = bTab[i + 1];
-                bTab[i + 1] = bTemp;
-            }
-        }
+        sum += bArray[i];
     }
-    if ((iFilterLen & 1) > 0)
-    {
-        bTemp = bTab[(iFilterLen - 1) / 2];
-    }
-    else
-    {
-        bTemp = (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
-    }
-    return bTemp;
+    return sum / iFilterLen;
 }
 
 void TDSModule::begin()
@@ -60,37 +41,41 @@ void TDSModule::begin()
     pinMode(_tdsPowerPin, OUTPUT);
     digitalWrite(_tdsPowerPin, LOW);
     _tempModule.begin();
+    _analogBuffer = new int[_SCOUNT];
 }
 
-int TDSModule::readTds()
+float TDSModule::readTds()
 {
-    int analogBuffer[_SCOUNT];
-    static unsigned long analogSampleTimepoint = millis();
-    for (int i = 0; i < _SCOUNT; i++)
+    if (millis() - _previousMillis > 40U)
     {
-        analogSampleTimepoint = millis();
-        analogBuffer[i] = analogRead(_tdsPin); // read the analog value and store into the buffer
-        delay(40);
+        _previousMillis = millis();
+        _analogBuffer[_bufferCounter] = analogRead(_tdsPin); // read the analog value and store into the buffer
+        if (_bufferCounter == _SCOUNT)
+        {
+            float averageVoltage = getAverageNum(_analogBuffer, _SCOUNT) * (float)_VREF / 1024.0;
+            float temperatureC = _tempModule.readSensor();
+            float compensationCoefficient = 1.0 + 0.02 * (temperatureC - 25.0);
+            float compensationVoltage = averageVoltage / compensationCoefficient;
+            _bufferCounter = 0;
+            return (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
+        }
+        _bufferCounter += 1;
     }
-
-    float averageVoltage = getMedianNum(analogBuffer, _SCOUNT) * (float)_VREF / 1024.0;
-    float temperatureC = _tempModule.readSensor();
-    float compensationCoefficient = 1.0 + 0.02 * (temperatureC - 25.0);
-
-    float compensationVoltage = averageVoltage / compensationCoefficient;
-
-    float tdsValue = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
-
-    return tdsValue;
+    return 0;
 }
 
-int TDSModule::readSensor()
+bool TDSModule::readSensor()
 {
     digitalWrite(_tdsPowerPin, HIGH);
-    delay(10);
-    _tdsValue = readTds();
+    // delay(3);
+    int tmp_value = readTds();
     digitalWrite(_tdsPowerPin, LOW);
-    return _tdsValue;
+    if (tmp_value)
+    {
+        _tdsValue = tmp_value;
+        return true;
+    }
+    return false;
 }
 
 int TDSModule::getValue()

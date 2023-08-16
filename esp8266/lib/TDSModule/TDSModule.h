@@ -13,19 +13,22 @@ public:
     TDSModule(int tdsPin, int tdsPowerPin, int tempPin, float VREF, int SCOUNT);
 
     void begin();
-    int readSensor();
+    bool readSensor();
     int getValue();
 
 private:
-    int getMedianNum(int bArray[], int iFilterLen);
-    int readTds();
+    float getAverageNum(int bArray[], int iFilterLen);
+    float readTds();
 
+    unsigned long _previousMillis = 0;
+    int *_analogBuffer;
+    int _bufferCounter = 0;
     int _tdsPin;
     int _tdsPowerPin;
     int _tempPin;
     int _tdsValue;
     float _VREF = 3.3;
-    int _SCOUNT = 30;
+    int _SCOUNT = 20;
     TempModule _tempModule;
 };
 
