@@ -61,7 +61,7 @@ bool PhModule::readSensor()
 {
     digitalWrite(_powerPin, HIGH);
     // delay(3);
-    int tmp_value = readPh();
+    float tmp_value = readPh();
     digitalWrite(_powerPin, LOW);
     if (tmp_value)
     {

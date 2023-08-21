@@ -68,7 +68,7 @@ bool TDSModule::readSensor()
 {
     digitalWrite(_tdsPowerPin, HIGH);
     // delay(3);
-    int tmp_value = readTds();
+    float tmp_value = readTds();
     digitalWrite(_tdsPowerPin, LOW);
     if (tmp_value)
     {
