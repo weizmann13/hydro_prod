@@ -10,6 +10,7 @@
 #define MQTT_HOST IPAddress(192, 168, 1, 200)
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "Hydro/esp"
+#define MQTT_CSV_TOPIC "Hydro/csv"
 
 const int TdsPhPin = A0;
 const int TdsPowerPin = 4;
@@ -20,6 +21,10 @@ bool phReady = false;
 unsigned long tdsPreviousMillis = 0;
 unsigned long phPreviousMillis = 0;
 unsigned long mqttPreviousMillis = 0;
+
+float phValue;
+float tdsValue;
+float tempValue;
 
 TDSModule tdsModule(TdsPhPin, TdsPowerPin, tempPin);
 PhModule phModule(TdsPhPin, PhPowerPin);
@@ -34,28 +39,29 @@ void setup()
   phModule.begin();
   tempModule.begin();
   mqttModule.begin();
-  displayModule.begin();
+  // displayModule.begin();
 }
 
 void loop()
 {
-  if (tdsModule.readSensor())
-  {
-    Serial.printf("tds value %f, time %lu\n", tdsModule.getValue(), millis() - tdsPreviousMillis);
-    tdsPreviousMillis = millis();
-  }
-  if (phModule.readSensor())
-  {
-    Serial.printf("ph value %f, time %lu\n", phModule.getValue(), millis() - phPreviousMillis);
-    phPreviousMillis = millis();
-  }
-  // tdsModule.readSensor();
-  // phModule.readSensor();
-  tempModule.readSensor();
-  if (millis() - mqttPreviousMillis > 5000)
-  {
-    mqttPreviousMillis = millis();
-    // mqttModule.publishData(MQTT_TOPIC, tdsModule.getValue(), phModule.getValue(), tempModule.getValue());
-  }
-  displayModule.loop();
+  // if (tdsModule.readSensor())
+  // {
+  //   Serial.printf("tds value %f, time %lu\n", tdsModule.getValue(), millis() - tdsPreviousMillis);
+  //   tdsPreviousMillis = millis();
+  // }
+  // if (phModule.readSensor())
+  // {
+  //   Serial.printf("ph value %f, time %lu\n", phModule.getValue(), millis() - phPreviousMillis);
+  //   phPreviousMillis = millis();
+  // }
+  tdsValue = tdsModule.readSensor();
+  phValue = phModule.readSensor();
+  tempValue = tempModule.readSensor();
+  mqttModule.publishData(MQTT_CSV_TOPIC, tdsValue, phValue, tempValue);
+  // if (millis() - mqttPreviousMillis > 5000)
+  // {
+  //   mqttPreviousMillis = millis();
+  //   // mqttModule.publishData(MQTT_TOPIC, tdsModule.getValue(), phModule.getValue(), tempModule.getValue());
+  // }
+  // displayModule.loop();
 }

@@ -33,21 +33,26 @@ float PhModule::getAverageNum(int bArray[], int iFilterLen)
 
 float PhModule::readPh()
 {
-    if (millis() - _previousMillis > 40U)
-    {
-        _previousMillis = millis();
-        _analogBuffer[_bufferCounter] = analogRead(_pin);
-        if (_bufferCounter == _SCOUNT)
-        {
-            float avgval = getAverageNum(_analogBuffer, _SCOUNT);
-            float volt = (float)avgval * _VREF / 1024 / 6;
-            float ph_act = -5.70 * volt + _calibration_value;
-            _bufferCounter = 0;
-            return ph_act;
-        }
-        _bufferCounter += 1;
-    }
-    return 0;
+    int tempV = analogRead(_pin);
+    float volt = tempV * _VREF / 1024 / 6;
+    float ph_act = -5.70 * volt + _calibration_value;
+    return ph_act;
+
+    // if (millis() - _previousMillis > 40U)
+    // {
+    //     _previousMillis = millis();
+    //     _analogBuffer[_bufferCounter] = analogRead(_pin);
+    //     if (_bufferCounter == _SCOUNT)
+    //     {
+    //         float avgval = getAverageNum(_analogBuffer, _SCOUNT);
+    //         float volt = (float)avgval * _VREF / 1024 / 6;
+    //         float ph_act = -5.70 * volt + _calibration_value;
+    //         _bufferCounter = 0;
+    //         return ph_act;
+    //     }
+    //     _bufferCounter += 1;
+    // }
+    // return 0;
 }
 
 void PhModule::begin()
@@ -57,18 +62,19 @@ void PhModule::begin()
     _analogBuffer = new int[_SCOUNT];
 }
 
-bool PhModule::readSensor()
+float PhModule::readSensor()
 {
     digitalWrite(_powerPin, HIGH);
-    // delay(3);
-    int tmp_value = readPh();
+    delay(3);
+    float tmp_value = readPh();
     digitalWrite(_powerPin, LOW);
-    if (tmp_value)
-    {
-        _value = tmp_value;
-        return true;
-    }
-    return false;
+    return tmp_value;
+    // if (tmp_value)
+    // {
+    //     _value = tmp_value;
+    //     return true;
+    // }
+    // return false;
 }
 
 float PhModule::getValue()

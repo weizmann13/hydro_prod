@@ -91,10 +91,10 @@ void MQTTModule::begin()
     connectToWifi();
 }
 
-void MQTTModule::publishData(const char *topic, int tdsValue, float phValue, float tempValue)
+void MQTTModule::publishData(const char *topic, float tdsValue, float phValue, float tempValue)
 {
     char influxDBLineProtocol[128]; // Adjust buffer size as per your requirements
-    sprintf(influxDBLineProtocol, "esp0,hydro_number=0 tds_value=%d,ph_value=%f,temp_value=%f", tdsValue, phValue, tempValue);
+    sprintf(influxDBLineProtocol, "%f,%f,%f\n", tdsValue, phValue, tempValue);
     publish(topic, influxDBLineProtocol);
 }
 
@@ -102,6 +102,6 @@ void MQTTModule::publish(const char *topic, const char *message)
 {
     if (_mqttClient.connected())
     {
-        _mqttClient.publish(topic, 2, true, message);
+        _mqttClient.publish(topic, 1, true, message);
     }
 }

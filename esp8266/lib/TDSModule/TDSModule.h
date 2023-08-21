@@ -7,13 +7,13 @@
 class TDSModule
 {
 public:
-    TDSModule(int tdsPin, int powerPin, int tempPin);
+    TDSModule(int tdsPin, int tdsPowerPin, int tempPin);
     TDSModule(int tdsPin, int tdsPowerPin, int tempPin, float VREF);
     TDSModule(int tdsPin, int tdsPowerPin, int tempPin, int SCOUNT);
     TDSModule(int tdsPin, int tdsPowerPin, int tempPin, float VREF, int SCOUNT);
 
     void begin();
-    bool readSensor();
+    float readSensor();
     float getValue();
 
 private:

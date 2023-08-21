@@ -10,7 +10,7 @@ public:
     PhModule(int pin, int powerPin, float calibration_value, float VREF, int SCOUNT);
 
     void begin();
-    bool readSensor();
+    float readSensor();
     float getValue();
 
 private:
