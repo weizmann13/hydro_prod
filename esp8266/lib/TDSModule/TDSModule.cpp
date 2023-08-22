@@ -2,26 +2,26 @@
 #include <Arduino.h>
 #include "TempModule.h"
 
-TDSModule::TDSModule(int tdsPin, int tdsPowerPin, int tempPin)
-    : _tdsPin(tdsPin), _tdsPowerPin(tdsPowerPin), _tempPin(tempPin), _tdsValue(0),
+TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin)
+    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempPin(tempPin), _tdsValue(0),
       _tempModule(tempPin)
 {
 }
 
-TDSModule::TDSModule(int tdsPin, int tdsPowerPin, int tempPin, float VREF)
-    : _tdsPin(tdsPin), _tdsPowerPin(tdsPowerPin), _tempPin(tempPin), _tdsValue(0),
+TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin, float VREF)
+    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempPin(tempPin), _tdsValue(0),
       _VREF(VREF), _tempModule(tempPin)
 {
 }
 
-TDSModule::TDSModule(int tdsPin, int tdsPowerPin, int tempPin, int SCOUNT)
-    : _tdsPin(tdsPin), _tdsPowerPin(tdsPowerPin), _tempPin(tempPin), _tdsValue(0),
+TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin, int SCOUNT)
+    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempPin(tempPin), _tdsValue(0),
       _SCOUNT(SCOUNT), _tempModule(tempPin)
 {
 }
 
-TDSModule::TDSModule(int tdsPin, int tdsPowerPin, int tempPin, float VREF, int SCOUNT)
-    : _tdsPin(tdsPin), _tdsPowerPin(tdsPowerPin), _tempPin(tempPin), _tdsValue(0),
+TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin, float VREF, int SCOUNT)
+    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempPin(tempPin), _tdsValue(0),
       _VREF(VREF), _SCOUNT(SCOUNT), _tempModule(tempPin)
 {
 }
@@ -38,8 +38,6 @@ float TDSModule::getAverageNum(int bArray[], int iFilterLen)
 
 void TDSModule::begin()
 {
-    pinMode(_tdsPowerPin, OUTPUT);
-    digitalWrite(_tdsPowerPin, LOW);
     _tempModule.begin();
     _analogBuffer = new int[_SCOUNT];
 }
@@ -48,17 +46,23 @@ float TDSModule::readTds()
 {
     if (millis() - _previousMillis > 40U)
     {
-        _previousMillis = millis();
-        _analogBuffer[_bufferCounter] = analogRead(_tdsPin); // read the analog value and store into the buffer
+
+        // Serial.print("TDS Buffer: ");
+        // Serial.println(_analogBuffer[_bufferCounter]);
         if (_bufferCounter == _SCOUNT)
         {
-            float averageVoltage = getAverageNum(_analogBuffer, _SCOUNT) * (float)_VREF / 1024.0;
+            float averageVoltage = _ads.computeVolts(getAverageNum(_analogBuffer, _SCOUNT));
+            Serial.print("TDS Voltage: ");
+            Serial.println(averageVoltage);
             float temperatureC = _tempModule.readSensor();
             float compensationCoefficient = 1.0 + 0.02 * (temperatureC - 25.0);
             float compensationVoltage = averageVoltage / compensationCoefficient;
             _bufferCounter = 0;
-            return (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
+            float finalTds = (133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5;
+            return finalTds;
         }
+        _analogBuffer[_bufferCounter] = _ads.readADC_SingleEnded(_tdsAdsPin); // read the analog value and store into the buffer
+        _previousMillis = millis();
         _bufferCounter += 1;
     }
     return 0;
@@ -66,10 +70,7 @@ float TDSModule::readTds()
 
 bool TDSModule::readSensor()
 {
-    digitalWrite(_tdsPowerPin, HIGH);
-    // delay(3);
     float tmp_value = readTds();
-    digitalWrite(_tdsPowerPin, LOW);
     if (tmp_value)
     {
         _tdsValue = tmp_value;

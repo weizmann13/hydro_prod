@@ -12,7 +12,7 @@ class MQTTModule
 public:
     MQTTModule(const char *ssid, const char *password, IPAddress mqttHost, int mqttPort);
     void begin();
-    void publishData(const char *topic, int tdsValue, float phValue, float tempValue);
+    void publishData(const char *topic, float tdsValue, float phValue, float tempValue);
 
 private:
     void connectToWifi();

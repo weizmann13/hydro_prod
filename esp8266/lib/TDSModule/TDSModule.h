@@ -3,14 +3,15 @@
 
 #include <Arduino.h>
 #include "TempModule.h"
+#include "Adafruit_ADS1X15.h"
 
 class TDSModule
 {
 public:
-    TDSModule(int tdsPin, int powerPin, int tempPin);
-    TDSModule(int tdsPin, int tdsPowerPin, int tempPin, float VREF);
-    TDSModule(int tdsPin, int tdsPowerPin, int tempPin, int SCOUNT);
-    TDSModule(int tdsPin, int tdsPowerPin, int tempPin, float VREF, int SCOUNT);
+    TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin);
+    TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin, float VREF);
+    TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin, int SCOUNT);
+    TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin, float VREF, int SCOUNT);
 
     void begin();
     bool readSensor();
@@ -23,12 +24,12 @@ private:
     unsigned long _previousMillis = 0;
     int *_analogBuffer;
     int _bufferCounter = 0;
-    int _tdsPin;
-    int _tdsPowerPin;
+    int _tdsAdsPin;
     int _tempPin;
     int _tdsValue;
     float _VREF = 3.3;
-    int _SCOUNT = 20;
+    int _SCOUNT = 10;
+    Adafruit_ADS1115 &_ads;
     TempModule _tempModule;
 };
 

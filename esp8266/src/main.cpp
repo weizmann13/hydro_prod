@@ -4,6 +4,8 @@
 #include "TempModule.h" // Class for temperature sensor
 #include "MQTTModule.h" // Class for MQTT communication
 #include "DisplayModule.h"
+#include "Adafruit_ADS1X15.h"
+#include <SPI.h>
 
 #define WIFI_SSID "Lonsher-Office"
 #define WIFI_PASSWORD "62306230"
@@ -11,9 +13,8 @@
 #define MQTT_PORT 1883
 #define MQTT_TOPIC "Hydro/esp"
 
-const int TdsPhPin = A0;
-const int TdsPowerPin = 4;
-const int PhPowerPin = 5;
+const int TdsAdsPin = 0;
+const int PhAdsPin = 1;
 const int tempPin = 0;
 bool tdsReady = false;
 bool phReady = false;
@@ -21,11 +22,12 @@ unsigned long tdsPreviousMillis = 0;
 unsigned long phPreviousMillis = 0;
 unsigned long mqttPreviousMillis = 0;
 
-TDSModule tdsModule(TdsPhPin, TdsPowerPin, tempPin);
-PhModule phModule(TdsPhPin, PhPowerPin);
+Adafruit_ADS1115 ads1;
+TDSModule tdsModule(TdsAdsPin, ads1, tempPin);
+PhModule phModule(PhAdsPin, ads1);
 TempModule tempModule(tempPin);
 MQTTModule mqttModule(WIFI_SSID, WIFI_PASSWORD, MQTT_HOST, MQTT_PORT);
-DisplayModule displayModule(tdsModule, phModule, tempModule);
+// DisplayModule displayModule(tdsModule, phModule, tempModule);
 
 void setup()
 {
@@ -34,28 +36,32 @@ void setup()
   phModule.begin();
   tempModule.begin();
   mqttModule.begin();
-  displayModule.begin();
+  // displayModule.begin();
+  ads1.begin();
 }
 
 void loop()
 {
-  if (tdsModule.readSensor())
-  {
-    Serial.printf("tds value %f, time %lu\n", tdsModule.getValue(), millis() - tdsPreviousMillis);
-    tdsPreviousMillis = millis();
-  }
-  if (phModule.readSensor())
-  {
-    Serial.printf("ph value %f, time %lu\n", phModule.getValue(), millis() - phPreviousMillis);
-    phPreviousMillis = millis();
-  }
-  // tdsModule.readSensor();
-  // phModule.readSensor();
+  // if (tdsModule.readSensor())
+  // {
+  //   Serial.printf("tds value %f, time %lu\n", tdsModule.getValue(), millis() - tdsPreviousMillis);
+  //   tdsPreviousMillis = millis();
+  // }
+  // if (phModule.readSensor())
+  // {
+  //   Serial.printf("ph value %f, time %lu\n", phModule.getValue(), millis() - phPreviousMillis);
+  //   phPreviousMillis = millis();
+  // }
+  tdsModule.readSensor();
+  phModule.readSensor();
   tempModule.readSensor();
   if (millis() - mqttPreviousMillis > 5000)
   {
     mqttPreviousMillis = millis();
     // mqttModule.publishData(MQTT_TOPIC, tdsModule.getValue(), phModule.getValue(), tempModule.getValue());
+    char influxDBLineProtocol[128]; // Adjust buffer size as per your requirements
+    sprintf(influxDBLineProtocol, "esp0,hydro_number=0 tds_value=%f,ph_value=%f,temp_value=%f", tdsModule.getValue(), phModule.getValue(), tempModule.getValue());
+    Serial.println(influxDBLineProtocol);
   }
-  displayModule.loop();
+  // displayModule.loop();
 }
