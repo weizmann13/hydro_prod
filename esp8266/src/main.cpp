@@ -64,10 +64,10 @@ void loop()
   if (millis() - mqttPreviousMillis > 5000)
   {
     mqttPreviousMillis = millis();
-    // mqttModule.publishData(MQTT_TOPIC, tdsModule.getValue(), phModule.getValue(), tempModule.getValue());
-    char influxDBLineProtocol[128]; // Adjust buffer size as per your requirements
-    sprintf(influxDBLineProtocol, "esp0,hydro_number=0 tds_value=%f,ph_value=%f,temp_value=%f,ec_value=%f", tdsModule.getValue(), phModule.getValue(), tempModule.getValue(), ecModule.getValue());
-    Serial.println(influxDBLineProtocol);
+    mqttModule.publishData(MQTT_TOPIC, tdsModule.getValue(), phModule.getValue(), tempModule.getValue(), ecModule.getValue());
+    // char influxDBLineProtocol[128]; // Adjust buffer size as per your requirements
+    // sprintf(influxDBLineProtocol, "esp0,hydro_number=0 tds_value=%f,ph_value=%f,temp_value=%f,ec_value=%f", tdsModule.getValue(), phModule.getValue(), tempModule.getValue(), ecModule.getValue());
+    // Serial.println(influxDBLineProtocol);
   }
   // displayModule.loop();
 }

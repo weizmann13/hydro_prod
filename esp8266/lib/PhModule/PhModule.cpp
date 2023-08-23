@@ -40,8 +40,8 @@ float PhModule::readPh()
         if (_bufferCounter == _SCOUNT)
         {
             float avgval = _ads.computeVolts(getAverageNum(_analogBuffer, _SCOUNT));
-            Serial.print("Ph Voltage: ");
-            Serial.println(avgval);
+            // Serial.print("Ph Voltage: ");
+            // Serial.println(avgval);
             float volt = (float)avgval / 6;
             float ph_act = -5.70 * volt + _calibration_value;
             _bufferCounter = 0;

@@ -9,9 +9,7 @@ class TDSModule
 {
 public:
     TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule);
-    TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule, float VREF);
     TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule, int SCOUNT);
-    TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule, float VREF, int SCOUNT);
 
     void begin();
     bool readSensor();
@@ -21,15 +19,14 @@ private:
     float getAverageNum(int bArray[], int iFilterLen);
     float readTds();
 
+    int _tdsAdsPin;
+    Adafruit_ADS1115 &_ads;
+    TempModule &_tempModule;
+    int _SCOUNT = 10;
     unsigned long _previousMillis = 0;
     int *_analogBuffer;
     int _bufferCounter = 0;
-    int _tdsAdsPin;
-    TempModule &_tempModule;
-    int _tdsValue;
-    float _VREF = 3.3;
-    int _SCOUNT = 10;
-    Adafruit_ADS1115 &_ads;
+    int _tdsValue = 0;
 };
 
 #endif

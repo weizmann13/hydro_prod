@@ -3,25 +3,12 @@
 #include "TempModule.h"
 
 TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule)
-    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempModule(tempModule), _tdsValue(0)
-{
-}
-
-TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule, float VREF)
-    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempModule(tempModule), _tdsValue(0),
-      _VREF(VREF)
+    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempModule(tempModule)
 {
 }
 
 TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule, int SCOUNT)
-    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempModule(tempModule), _tdsValue(0),
-      _SCOUNT(SCOUNT)
-{
-}
-
-TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule, float VREF, int SCOUNT)
-    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempModule(tempModule), _tdsValue(0),
-      _VREF(VREF), _SCOUNT(SCOUNT)
+    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempModule(tempModule), _SCOUNT(SCOUNT)
 {
 }
 
@@ -50,8 +37,8 @@ float TDSModule::readTds()
         if (_bufferCounter == _SCOUNT)
         {
             float averageVoltage = _ads.computeVolts(getAverageNum(_analogBuffer, _SCOUNT));
-            Serial.print("TDS Voltage: ");
-            Serial.println(averageVoltage);
+            // Serial.print("TDS Voltage: ");
+            // Serial.println(averageVoltage);
             float temperatureC = _tempModule.readSensor();
             float compensationCoefficient = 1.0 + 0.02 * (temperatureC - 25.0);
             float compensationVoltage = averageVoltage / compensationCoefficient;
