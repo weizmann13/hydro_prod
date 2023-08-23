@@ -2,27 +2,26 @@
 #include <Arduino.h>
 #include "TempModule.h"
 
-TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin)
-    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempPin(tempPin), _tdsValue(0),
-      _tempModule(tempPin)
+TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule)
+    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempModule(tempModule), _tdsValue(0)
 {
 }
 
-TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin, float VREF)
-    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempPin(tempPin), _tdsValue(0),
-      _VREF(VREF), _tempModule(tempPin)
+TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule, float VREF)
+    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempModule(tempModule), _tdsValue(0),
+      _VREF(VREF)
 {
 }
 
-TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin, int SCOUNT)
-    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempPin(tempPin), _tdsValue(0),
-      _SCOUNT(SCOUNT), _tempModule(tempPin)
+TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule, int SCOUNT)
+    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempModule(tempModule), _tdsValue(0),
+      _SCOUNT(SCOUNT)
 {
 }
 
-TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, int tempPin, float VREF, int SCOUNT)
-    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempPin(tempPin), _tdsValue(0),
-      _VREF(VREF), _SCOUNT(SCOUNT), _tempModule(tempPin)
+TDSModule::TDSModule(int tdsAdsPin, Adafruit_ADS1115 &ads, TempModule &tempModule, float VREF, int SCOUNT)
+    : _tdsAdsPin(tdsAdsPin), _ads(ads), _tempModule(tempModule), _tdsValue(0),
+      _VREF(VREF), _SCOUNT(SCOUNT)
 {
 }
 
@@ -38,7 +37,6 @@ float TDSModule::getAverageNum(int bArray[], int iFilterLen)
 
 void TDSModule::begin()
 {
-    _tempModule.begin();
     _analogBuffer = new int[_SCOUNT];
 }
 
