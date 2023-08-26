@@ -19,17 +19,23 @@ private:
         const char *name;
         MenuItem *subMenus;
         int numSubMenus;
-        void (*function)(LiquidCrystal_I2C &_lcd);
+        void (DisplayModule::*function)();
     };
 
     void displayMenu();
     void updateMenuPosition();
     void handleEncoderButton();
 
-    static void displayTemperature(LiquidCrystal_I2C &_lcd);
-    static void displayTds(LiquidCrystal_I2C &_lcd);
-    static void displayPh(LiquidCrystal_I2C &_lcd);
+    void displayTemperature();
+    void displayTds();
+    void displayPh();
 
+    // Function to append a MenuItem to _currentTree
+    void appendMenuItem(MenuItem *menuItem);
+    // Function to remove the last MenuItem from _currentTree
+    void popMenuItem();
+
+    void goBack();
     LiquidCrystal_I2C _lcd;
     RotaryEncoder _encoder;
     MenuItem *_currentMenu;
@@ -47,23 +53,26 @@ private:
 
     // Define your menu tree structure
     MenuItem _subMenus[6] = {
-        {"Sensors", _sensorsSubMenu, 3, nullptr},
+        {"Sensors", _sensorsSubMenu, 4, nullptr},
         {"Actions", nullptr, 0, nullptr},      // Attach submenus later
         {"Calibrations", nullptr, 0, nullptr}, // Attach submenus later
-        {"Sensors2", _sensorsSubMenu, 3, nullptr},
+        {"Sensors2", _sensorsSubMenu, 4, nullptr},
         {"Actions2", nullptr, 0, nullptr},     // Attach submenus later
         {"Calibrations2", nullptr, 0, nullptr} // Attach submenus later
     };
 
     // Define your submenu options
-    MenuItem _sensorsSubMenu[3] = {
-        {"TDS", nullptr, 0, &displayTds},
-        {"pH", nullptr, 0, &displayPh},
-        {"Temperature", nullptr, 0, &displayTemperature}};
+
+    MenuItem _sensorsSubMenu[4] = {
+        {"go back", nullptr, 0, &DisplayModule::goBack},
+        {"TDS", nullptr, 0, &DisplayModule::displayTds},
+        {"pH", nullptr, 0, &DisplayModule::displayPh},
+        {"Temperature", nullptr, 0, &DisplayModule::displayTemperature}};
 
     // Define your other submenus similarly
-    MenuItem _goBackSubMenu = {"Go Back", nullptr, 0, nullptr};
+    MenuItem _goBackSubMenu = {"Go Back", nullptr, 0, &DisplayModule::goBack};
 
-    MenuItem *_currentTree[1] = {&_rootMenu};
+    MenuItem **_currentTree;
+    int _currentTreeSize = 1; // Current size of _currentTree
 };
 #endif

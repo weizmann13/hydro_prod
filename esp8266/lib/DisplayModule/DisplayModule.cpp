@@ -1,8 +1,9 @@
 #include "DisplayModule.h"
 
 DisplayModule::DisplayModule()
-    : _lcd(0x27, 20, 4), _encoder(D5, D6)
+    : _lcd(0x27, 20, 4), _encoder(D5, D6), _currentTree(new MenuItem *[1]), _currentTreeSize(1)
 {
+    _currentTree[0] = &_rootMenu;
 }
 
 void DisplayModule::displayMenu()
@@ -42,7 +43,7 @@ void DisplayModule::displayMenu()
     }
 }
 
-void DisplayModule::displayTemperature(LiquidCrystal_I2C &_lcd)
+void DisplayModule::displayTemperature()
 {
     _lcd.clear();
     _lcd.print("Temp: ");
@@ -50,7 +51,7 @@ void DisplayModule::displayTemperature(LiquidCrystal_I2C &_lcd)
     _lcd.print(" C");
 }
 
-void DisplayModule::displayTds(LiquidCrystal_I2C &_lcd)
+void DisplayModule::displayTds()
 {
     _lcd.clear();
     _lcd.print("Tds: ");
@@ -58,7 +59,7 @@ void DisplayModule::displayTds(LiquidCrystal_I2C &_lcd)
     _lcd.print(" ppm");
 }
 
-void DisplayModule::displayPh(LiquidCrystal_I2C &_lcd)
+void DisplayModule::displayPh()
 {
     _lcd.clear();
     _lcd.print("Ph: ");
@@ -100,23 +101,88 @@ void DisplayModule::loop()
 
 void DisplayModule::handleEncoderButton()
 {
+
     // Perform an action based on the selected menu item
     MenuItem *selectedMenuItem = &_currentMenu->subMenus[_currentMenuItemIndex];
     // Check if the selected menu item is a function or a submenu
     if (selectedMenuItem->numSubMenus == 0)
     {
-        selectedMenuItem->function(_lcd);
-        _currentMenu = selectedMenuItem;
+        (this->*selectedMenuItem->function)();
     }
     else
     {
         _currentMenu = selectedMenuItem;
+        appendMenuItem(selectedMenuItem);
+        Serial.println(_currentTree[_currentTreeSize - 1]->name);
         _currentMenuItemIndex = 0;
         _scrollIndex = 0;
         displayMenu();
     }
 }
+void DisplayModule::appendMenuItem(MenuItem *menuItem)
+{
+    // Create a new array with increased size
+    MenuItem **newTree = new MenuItem *[_currentTreeSize + 1];
 
+    // Copy existing pointers
+    for (int i = 0; i < _currentTreeSize; ++i)
+    {
+        newTree[i] = _currentTree[i];
+    }
+
+    // Append the new menuItem
+    newTree[_currentTreeSize] = menuItem;
+
+    // Delete old array and update the pointer
+    delete[] _currentTree;
+    _currentTree = newTree;
+
+    // Increment the size
+    ++_currentTreeSize;
+}
+
+void DisplayModule::goBack()
+{
+    // Check if the current menu is the root menu
+    if (_currentMenu == &_rootMenu)
+    {
+        return;
+    }
+
+    _currentMenu = _currentTree[_currentTreeSize - 2];
+    // Check if the current menu is the first submenu of the root menu
+    popMenuItem();
+    // Set the current menu to the parent menu
+    _currentMenuItemIndex = 0;
+    _scrollIndex = 0;
+    displayMenu();
+}
+
+// Implement the popMenuItem function
+void DisplayModule::popMenuItem()
+{
+    if (_currentTreeSize > 0)
+    {
+        Serial.println("Popping menu item");
+        // Create a new array with reduced size
+        MenuItem **newTree = new MenuItem *[_currentTreeSize - 1];
+        Serial.println("2Popping menu item");
+        // Copy existing pointers
+        for (int i = 0; i < _currentTreeSize - 1; ++i)
+        {
+            newTree[i] = _currentTree[i];
+            Serial.println("3Popping menu item");
+        }
+
+        // Delete old array and update the pointer
+        delete[] _currentTree;
+        Serial.println("4Popping menu item");
+        _currentTree = newTree;
+
+        // Decrement the size
+        --_currentTreeSize;
+    }
+}
 void DisplayModule::begin()
 {
     _lcd.init();
