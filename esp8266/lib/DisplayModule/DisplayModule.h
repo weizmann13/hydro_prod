@@ -4,34 +4,62 @@
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
 #include <RotaryEncoder.h>
-#include "TDSModule.h"  // Class for TDS sensor
-#include "PhModule.h"   // Class for pH sensor
-#include "TempModule.h" // Class for temperature sensor
 
 class DisplayModule
 {
 public:
-    DisplayModule(TDSModule &tdsModule, PhModule &phModule, TempModule &tempModule);
+    DisplayModule();
 
     void begin();
     void loop();
 
 private:
-    void displayMenu();
-    void displayTemperature();
-    void displayTds();
-    void displayPh();
+    struct MenuItem
+    {
+        const char *name;
+        MenuItem *subMenus;
+        int numSubMenus;
+        void (*function)(LiquidCrystal_I2C &_lcd);
+    };
 
-    unsigned long _displayStartTime = 0;
-    bool _inDisplay = false;
+    void displayMenu();
+    void updateMenuPosition();
+    void handleEncoderButton();
+
+    static void displayTemperature(LiquidCrystal_I2C &_lcd);
+    static void displayTds(LiquidCrystal_I2C &_lcd);
+    static void displayPh(LiquidCrystal_I2C &_lcd);
+
     LiquidCrystal_I2C _lcd;
     RotaryEncoder _encoder;
-    const char *_menuItems[3] = {"tds value", "temp value", "ph value"};
-    int _menuPosition = 0;
-    int _prevMenuPosition = 0;
-    TDSModule &_tdsModule;
-    PhModule &_phModule;
-    TempModule &_tempModule;
+    MenuItem *_currentMenu;
+    int _currentMenuItemIndex = 0;
+    int _scrollIndex = 0;
+    int _prevCurrentMenuItemIndex = 0;
+    bool _inDisplay = false;
+    bool _buttonState = false;
+    unsigned long _displayStartTime = 0;
+    long _encoderPosition = 0;
+    long _prevEncoderPosition = 0;
+
+    // Define your menu tree structure
+    MenuItem _subMenus[6] = {
+        {"Sensors", _sensorsSubMenu, 3, nullptr}, // Attach submenus later
+        {"Actions", nullptr, 0, nullptr},         // Attach submenus later
+        {"Calibrations", nullptr, 0, nullptr},
+        {"Sensors2", _sensorsSubMenu, 3, nullptr}, // Attach submenus later
+        {"Actions2", nullptr, 0, nullptr},         // Attach submenus later
+        {"Calibrations2", nullptr, 0, nullptr}     // Attach submenus later
+    };
+    // Define your root menu with submenus
+    MenuItem _rootMenu = {"Root Menu", _subMenus, 6, nullptr};
+    // Define your submenu options
+    MenuItem _sensorsSubMenu[3] = {
+        {"TDS", nullptr, 0, &displayTds},
+        {"pH", nullptr, 0, &displayPh},
+        {"Temperature", nullptr, 0, &displayTemperature}};
+
+    // Define your other submenus similarly
 };
 
 #endif
