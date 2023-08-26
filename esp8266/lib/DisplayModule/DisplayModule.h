@@ -42,17 +42,19 @@ private:
     long _encoderPosition = 0;
     long _prevEncoderPosition = 0;
 
-    // Define your menu tree structure
-    MenuItem _subMenus[6] = {
-        {"Sensors", _sensorsSubMenu, 3, nullptr}, // Attach submenus later
-        {"Actions", nullptr, 0, nullptr},         // Attach submenus later
-        {"Calibrations", nullptr, 0, nullptr},
-        {"Sensors2", _sensorsSubMenu, 3, nullptr}, // Attach submenus later
-        {"Actions2", nullptr, 0, nullptr},         // Attach submenus later
-        {"Calibrations2", nullptr, 0, nullptr}     // Attach submenus later
-    };
     // Define your root menu with submenus
     MenuItem _rootMenu = {"Root Menu", _subMenus, 6, nullptr};
+
+    // Define your menu tree structure
+    MenuItem _subMenus[6] = {
+        {"Sensors", _sensorsSubMenu, 3, nullptr},
+        {"Actions", nullptr, 0, nullptr},      // Attach submenus later
+        {"Calibrations", nullptr, 0, nullptr}, // Attach submenus later
+        {"Sensors2", _sensorsSubMenu, 3, nullptr},
+        {"Actions2", nullptr, 0, nullptr},     // Attach submenus later
+        {"Calibrations2", nullptr, 0, nullptr} // Attach submenus later
+    };
+
     // Define your submenu options
     MenuItem _sensorsSubMenu[3] = {
         {"TDS", nullptr, 0, &displayTds},
@@ -60,6 +62,8 @@ private:
         {"Temperature", nullptr, 0, &displayTemperature}};
 
     // Define your other submenus similarly
-};
+    MenuItem _goBackSubMenu = {"Go Back", nullptr, 0, nullptr};
 
+    MenuItem *_currentTree[1] = {&_rootMenu};
+};
 #endif

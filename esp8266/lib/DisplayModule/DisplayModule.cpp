@@ -7,6 +7,7 @@ DisplayModule::DisplayModule()
 
 void DisplayModule::displayMenu()
 {
+    // check if the menu requires scrolling
     if (_currentMenu->numSubMenus > 4)
     {
         if (_currentMenuItemIndex > _scrollIndex + 3)
@@ -22,6 +23,7 @@ void DisplayModule::displayMenu()
     {
         _scrollIndex = 0;
     }
+
     _lcd.clear();
     int maxDisplayRows = 4; // Number of rows to display
     int loopIterations = min(maxDisplayRows, _currentMenu->numSubMenus);
@@ -66,20 +68,9 @@ void DisplayModule::displayPh(LiquidCrystal_I2C &_lcd)
 
 void DisplayModule::loop()
 {
-    // if (_inDisplay && millis() - _displayStartTime > 3000)
-    // {
-    //     _inDisplay = false;
-    //     displayMenu();
-    // }
-    // else if (_inDisplay)
-    // {
-    //     return;
-    // }
     _encoder.tick();
-    // Update the menu position
-    // _currentMenuItemIndex = min((int)_encoder.getPosition(), (_currentMenu->numSubMenus - 1));
-    // _currentMenuItemIndex = max(_currentMenuItemIndex, 0);
     _encoderPosition = _encoder.getPosition();
+    // check if the encoder position has changed
     if (_encoderPosition > _prevEncoderPosition)
     {
         _currentMenuItemIndex = min(_currentMenuItemIndex + 1, _currentMenu->numSubMenus - 1);
@@ -89,12 +80,7 @@ void DisplayModule::loop()
         _currentMenuItemIndex = max(_currentMenuItemIndex - 1, 0);
     }
     _prevEncoderPosition = _encoderPosition;
-    // if (_currentMenuItemIndex < 0)
-    // {
-    //     _currentMenuItemIndex += 3;
-    // }
-
-    // Check if the menu position has changed
+    // Check if the menu has changed
     if (_currentMenuItemIndex != _prevCurrentMenuItemIndex && _currentMenu->numSubMenus > 0)
     {
         displayMenu();
@@ -114,11 +100,9 @@ void DisplayModule::loop()
 
 void DisplayModule::handleEncoderButton()
 {
-    _displayStartTime = millis();
     // Perform an action based on the selected menu item
     MenuItem *selectedMenuItem = &_currentMenu->subMenus[_currentMenuItemIndex];
-    Serial.println(selectedMenuItem->name);
-    Serial.println(_currentMenuItemIndex);
+    // Check if the selected menu item is a function or a submenu
     if (selectedMenuItem->numSubMenus == 0)
     {
         selectedMenuItem->function(_lcd);
