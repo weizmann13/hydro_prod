@@ -27,62 +27,66 @@ unsigned long phPreviousMillis = 0;
 unsigned long mqttPreviousMillis = 0;
 
 PCF8575 pcf8575(0x20);
-Adafruit_ADS1115 ads1;
-TempModule tempModule(tempPin);
-PhModule phModule(PhAdsPin, ads1);
-TDSModule tdsModule(TdsAdsPin, ads1, tempModule);
-ECModule ecModule(ECAdsPin, ads1, tempModule);
-MQTTModule mqttModule(WIFI_SSID, WIFI_PASSWORD, MQTT_HOST, MQTT_PORT);
-DisplayModule displayModule;
+// Adafruit_ADS1115 ads1;
+// TempModule tempModule(tempPin);
+// PhModule phModule(PhAdsPin, ads1);
+// TDSModule tdsModule(TdsAdsPin, ads1, tempModule);
+// ECModule ecModule(ECAdsPin, ads1, tempModule);
+// MQTTModule mqttModule(WIFI_SSID, WIFI_PASSWORD, MQTT_HOST, MQTT_PORT);
+DisplayModule displayModule(pcf8575);
 
 void setup()
 {
   Serial.begin(9600);
   Serial.println("Start");
-  pcf8575.pinMode(0, OUTPUT);
+  for (int i = 0; i < 8; i++)
+  {
+    pcf8575.pinMode(i, OUTPUT);
+  }
+
   Serial.println("after pinMode");
   pcf8575.begin();
   Serial.println("after begin");
-  tdsModule.begin();
-  phModule.begin();
-  tempModule.begin();
-  ecModule.begin();
-  mqttModule.begin();
+  // tdsModule.begin();
+  // phModule.begin();
+  // tempModule.begin();
+  // ecModule.begin();
+  // mqttModule.begin();
   displayModule.begin();
-  ads1.setGain(GAIN_ONE);
-  ads1.begin();
+  // ads1.setGain(GAIN_ONE);`
+  // ads1.begin();
   Serial.println("Start");
 }
 
 void loop()
 {
-  Serial.println("loop");
-  pcf8575.digitalWrite(P0, HIGH);
-  delay(1000);
-  Serial.println("after delay");
-  pcf8575.digitalWrite(P0, LOW);
-  delay(1000);
-  if (tdsModule.readSensor())
-  {
-    Serial.printf("tds value %f, time %lu\n", tdsModule.getValue(), millis() - tdsPreviousMillis);
-    tdsPreviousMillis = millis();
-  }
-  if (phModule.readSensor())
-  {
-    Serial.printf("ph value %f, time %lu\n", phModule.getValue(), millis() - phPreviousMillis);
-    phPreviousMillis = millis();
-  }
-  tdsModule.readSensor();
-  phModule.readSensor();
-  tempModule.readSensor();
-  ecModule.readSensor();
-  if (millis() - mqttPreviousMillis > 5000)
-  {
-    mqttPreviousMillis = millis();
-    // mqttModule.publishData(MQTT_TOPIC, tdsModule.getValue(), phModule.getValue(), tempModule.getValue(), ecModule.getValue());
-    char influxDBLineProtocol[128]; // Adjust buffer size as per your requirements
-    sprintf(influxDBLineProtocol, "esp0,hydro_number=0 tds_value=%f,ph_value=%f,temp_value=%f,ec_value=%f", tdsModule.getValue(), phModule.getValue(), tempModule.getValue(), ecModule.getValue());
-    Serial.println(influxDBLineProtocol);
-  }
+  // Serial.println("loop");
+  // pcf8575.digitalWrite(P0, HIGH);
+  // delay(1000);
+  // Serial.println("after delay");
+  // pcf8575.digitalWrite(P0, LOW);
+  // delay(1000);
+  // if (tdsModule.readSensor())
+  // {
+  //   Serial.printf("tds value %f, time %lu\n", tdsModule.getValue(), millis() - tdsPreviousMillis);
+  //   tdsPreviousMillis = millis();
+  // }
+  // if (phModule.readSensor())
+  // {
+  //   Serial.printf("ph value %f, time %lu\n", phModule.getValue(), millis() - phPreviousMillis);
+  //   phPreviousMillis = millis();
+  // }
+  // tdsModule.readSensor();
+  // phModule.readSensor();
+  // tempModule.readSensor();
+  // ecModule.readSensor();
+  // if (millis() - mqttPreviousMillis > 5000)
+  // {
+  //   mqttPreviousMillis = millis();
+  //   // mqttModule.publishData(MQTT_TOPIC, tdsModule.getValue(), phModule.getValue(), tempModule.getValue(), ecModule.getValue());
+  //   char influxDBLineProtocol[128]; // Adjust buffer size as per your requirements
+  //   sprintf(influxDBLineProtocol, "esp0,hydro_number=0 tds_value=%f,ph_value=%f,temp_value=%f,ec_value=%f", tdsModule.getValue(), phModule.getValue(), tempModule.getValue(), ecModule.getValue());
+  //   Serial.println(influxDBLineProtocol);
+  // }
   displayModule.loop();
 }
