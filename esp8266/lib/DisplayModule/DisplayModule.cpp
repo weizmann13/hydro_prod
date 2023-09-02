@@ -1,7 +1,7 @@
 #include "DisplayModule.h"
 
-DisplayModule::DisplayModule()
-    : _lcd(0x27, 20, 4), _encoder(D5, D6), _currentTree(new MenuItem *[1]), _currentTreeSize(1)
+DisplayModule::DisplayModule(PCF8575 &pcf8575)
+    : _pcf8575(pcf8575), _lcd(0x27, 20, 4), _encoder(D5, D6), _currentTree(new MenuItem *[1]), _currentTreeSize(1)
 {
     _currentTree[0] = &_rootMenu;
 }
@@ -98,7 +98,12 @@ void DisplayModule::loop()
         _buttonState = false;
     }
 }
-
+int DisplayModule::changeRelay()
+{
+    int num = _currentMenu->name[6] - '0';
+    Serial.println(num);
+    return num;
+}
 void DisplayModule::handleEncoderButton()
 {
 
@@ -111,6 +116,11 @@ void DisplayModule::handleEncoderButton()
     }
     else
     {
+        if (selectedMenuItem->function != nullptr)
+        {
+            (this->*selectedMenuItem->function)();
+        }
+
         _currentMenu = selectedMenuItem;
         appendMenuItem(selectedMenuItem);
         Serial.println(_currentTree[_currentTreeSize - 1]->name);
@@ -139,6 +149,18 @@ void DisplayModule::appendMenuItem(MenuItem *menuItem)
 
     // Increment the size
     ++_currentTreeSize;
+}
+
+void DisplayModule::relayOn()
+{
+    int pinNumber = changeRelay();
+    _pcf8575.digitalWrite(pinNumber, LOW);
+}
+
+void DisplayModule::relayOff()
+{
+    int pinNumber = changeRelay();
+    _pcf8575.digitalWrite(pinNumber, HIGH);
 }
 
 void DisplayModule::goBack()
@@ -185,6 +207,10 @@ void DisplayModule::popMenuItem()
 }
 void DisplayModule::begin()
 {
+    for (int i = 0; i < 8; i++)
+    {
+        _pcf8575.digitalWrite(i, HIGH);
+    }
     _lcd.init();
     _lcd.backlight();
     pinMode(D7, INPUT_PULLUP);
