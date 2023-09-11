@@ -69,23 +69,32 @@ void DisplayModule::displayPh()
 
 void DisplayModule::loop()
 {
-    _encoder.tick();
-    _encoderPosition = _encoder.getPosition();
-    // check if the encoder position has changed
-    if (_encoderPosition > _prevEncoderPosition)
+    if (_inFunction)
     {
-        _currentMenuItemIndex = min(_currentMenuItemIndex + 1, _currentMenu->numSubMenus - 1);
+        Serial.println("in function");
+        MenuItem *selectedMenuItem = &_currentMenu->subMenus[_currentMenuItemIndex];
+        (this->*selectedMenuItem->function)();
     }
-    else if (_encoderPosition < _prevEncoderPosition)
+    else
     {
-        _currentMenuItemIndex = max(_currentMenuItemIndex - 1, 0);
-    }
-    _prevEncoderPosition = _encoderPosition;
-    // Check if the menu has changed
-    if (_currentMenuItemIndex != _prevCurrentMenuItemIndex && _currentMenu->numSubMenus > 0)
-    {
-        displayMenu();
-        _prevCurrentMenuItemIndex = _currentMenuItemIndex;
+        _encoder.tick();
+        _encoderPosition = _encoder.getPosition();
+        // check if the encoder position has changed
+        if (_encoderPosition > _prevEncoderPosition)
+        {
+            _currentMenuItemIndex = min(_currentMenuItemIndex + 1, _currentMenu->numSubMenus - 1);
+        }
+        else if (_encoderPosition < _prevEncoderPosition)
+        {
+            _currentMenuItemIndex = max(_currentMenuItemIndex - 1, 0);
+        }
+        _prevEncoderPosition = _encoderPosition;
+        // Check if the menu has changed
+        if (_currentMenuItemIndex != _prevCurrentMenuItemIndex && _currentMenu->numSubMenus > 0)
+        {
+            displayMenu();
+            _prevCurrentMenuItemIndex = _currentMenuItemIndex;
+        }
     }
     // Check if the rotary encoder button is pressed
     if (digitalRead(D7) == LOW && !_buttonState)
@@ -120,7 +129,6 @@ void DisplayModule::handleEncoderButton()
         {
             (this->*selectedMenuItem->function)();
         }
-
         _currentMenu = selectedMenuItem;
         appendMenuItem(selectedMenuItem);
         Serial.println(_currentTree[_currentTreeSize - 1]->name);
@@ -163,6 +171,35 @@ void DisplayModule::relayOff()
     _pcf8575.digitalWrite(pinNumber, HIGH);
 }
 
+void DisplayModule::disposelTank()
+{
+    if (!_inFunction)
+    {
+        _funcStartTime = millis();
+        _inFunction = true;
+        _pcf8575.digitalWrite(_disposelValve, LOW);
+        _lcd.clear();
+        _lcd.print("Disposel Tank");
+        _lcd.setCursor(0, 1);
+        _lcd.print("time left: 5s");
+
+        return;
+    }
+    if (millis() - _lastDispayTime > 500)
+    {
+        _lcd.clear();
+        _lcd.print("Disposel Tank");
+        _lcd.setCursor(0, 1);
+        _lcd.printf("time left: %.2fs", (5000 - (millis() - _funcStartTime)) / 1000.0);
+        _lastDispayTime = millis();
+    }
+    if (millis() - _funcStartTime > 5000)
+    {
+        _pcf8575.digitalWrite(_disposelValve, HIGH);
+        _inFunction = false;
+        goBack();
+    }
+}
 void DisplayModule::goBack()
 {
     // Check if the current menu is the root menu

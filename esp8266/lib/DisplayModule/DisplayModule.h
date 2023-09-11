@@ -30,7 +30,7 @@ private:
     void displayTemperature();
     void displayTds();
     void displayPh();
-
+    void disposelTank();
     // Function to append a MenuItem to _currentTree
     void appendMenuItem(MenuItem *menuItem);
     int changeRelay();
@@ -44,6 +44,7 @@ private:
     LiquidCrystal_I2C _lcd;
     RotaryEncoder _encoder;
     MenuItem *_currentMenu;
+    bool _inFunction = false;
     int _currentMenuItemIndex = 0;
     int _scrollIndex = 0;
     int _currentRelay = 0;
@@ -51,18 +52,21 @@ private:
     bool _inDisplay = false;
     bool _buttonState = false;
     unsigned long _displayStartTime = 0;
+    unsigned long _funcStartTime = 0;
+    unsigned long _lastDispayTime = 0;
     long _encoderPosition = 0;
     long _prevEncoderPosition = 0;
+    int _disposelValve = 0;
 
     // Define your root menu with submenus
     MenuItem _rootMenu = {"Root Menu", _subMenus, 6, nullptr};
 
     // Define your menu tree structure
     MenuItem _subMenus[7] = {
-        {"Relays", _relaysSubMenu, 8, nullptr},
+        {"Relays", _relaysSubMenu, 9, nullptr},
         {"Sensors", _sensorsSubMenu, 4, nullptr},
-        {"Actions", nullptr, 0, nullptr},      // Attach submenus later
-        {"Calibrations", nullptr, 0, nullptr}, // Attach submenus later
+        {"Actions", _actionsSubMenu, 2, nullptr}, // Attach submenus later
+        {"Calibrations", nullptr, 0, nullptr},    // Attach submenus later
         {"Sensors2", _sensorsSubMenu, 4, nullptr},
         {"Actions2", nullptr, 0, nullptr},     // Attach submenus later
         {"Calibrations2", nullptr, 0, nullptr} // Attach submenus later
@@ -70,13 +74,18 @@ private:
 
     // Define your submenu options
 
+    MenuItem _actionsSubMenu[2] = {
+        {"go back", nullptr, 0, &DisplayModule::goBack},
+        {"Disposal Tank", nullptr, 0, &DisplayModule::disposelTank}};
+
     MenuItem _sensorsSubMenu[4] = {
         {"go back", nullptr, 0, &DisplayModule::goBack},
         {"TDS", nullptr, 0, &DisplayModule::displayTds},
         {"pH", nullptr, 0, &DisplayModule::displayPh},
         {"Temperature", nullptr, 0, &DisplayModule::displayTemperature}};
 
-    MenuItem _relaysSubMenu[8] = {
+    MenuItem _relaysSubMenu[9] = {
+        {"go back", nullptr, 0, &DisplayModule::goBack},
         {"relay 0", _relayMenu, 3, nullptr},
         {"relay 1", _relayMenu, 3, nullptr},
         {"relay 2", _relayMenu, 3, nullptr},
